@@ -1,48 +1,65 @@
+//Modules
 
-// import the packages
-
-const express = require("express");
-const fs = require("fs");
-const path= require("path")
-const dirName = path.join(__dirname, "timeStamps")
-// const [ , ,arg1] = process.argv
-// console.log(process.argv)
-
-// initialize express server framework
-
+const fs = require('fs');
+const express = require('express');
 const app = express();
+// const cors = require('cors');
+const path = require('path');
 
-// first get server
-app.get("/",(req,res)=>{
-//     res.send("hi i am working good");
-})
-//second get server
-app.get("/date-time",(req,res)=>{
+// app.use(cors())
+app.use(express.json());
 
-   let date = new Date();
-   let currentTimeStamp = date.toUTCString().slice(0,-3);
-   console.log(currentTimeStamp)
 
-   console.log(dirName)
-//    console.log(process.argv)
 
-   let content = `The last updted timeStamp : ${currentTimeStamp}`
+//endpoint to create a text files
 
-   fs.writeFile(`${dirName}/date-time.text`,content, (error)=>{
-    if(error){
-        res.send("error in the file")
-        
-    }else{
-        res.sendFile(path.join(dirName,"date-time.text"))
+app.post('/create', (request, response) => {
+
+    //Create Current Timestamp
+    const CurrentTimeStamp = new Date().toLocaleString
+    console.log(CurrentTimeStamp)
+    
+
+    //txt File name create
+    const date = String(new Date()).split(" ");
+    console.log(date)
+    const CurrentDate = date[2] + date[1] + date[3]
+    console.log(CurrentDate)
+    const CurrentTime = date[4]
+    console.log(CurrentTime)
+    const FileName = `${CurrentDate}-${CurrentTime.split(":").join("-")}`;
+    console.log(FileName)
+    
+    //Create text file =>> File name=current date-time and content=Current-date-time-details
+    const txtFile = `./DateTime/${FileName}.txt`
+
+    try {
+        if (!fs.existsSync(txtFile)) {
+
+            fs.writeFile(`${txtFile}`, `${CurrentTimeStamp}`, err => {
+                if (err) {
+                    console.error(err);
+                    return response.status(404).json({ Message: "Text file creation failed" })
+                }
+                return response.status(201).json({ Message: `Text file ${FileName}.txt created successfully ` })
+            })
+        }
+    } catch (err) {
+        console.error(err);
+        return response.status(404).json({ Message: "Text file exist" })
     }
-    
-   })
-   fs.readdir(`${dirName}`, function(err, items) {
-    // console.log(items);
-    
-    for (var i=0; i<items.length; i++) {
-        console.log(items[i]);
-    }});
+})
+//endpoint to filter and get text files
+app.get('/', (request, response) => {
+
+    const textFileFolder = [];
+    const files = fs.readdirSync('./DateTime');
+    files.forEach(file => {
+        if (path.extname(file) == '.txt') {
+            textFileFolder.push(file);
+        }
+    })
+    response.status(200).send(textFileFolder);
 })
 
 //listen to a server
